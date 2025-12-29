@@ -1,65 +1,70 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+
+import { useState } from 'react';
+import styles from './page.module.css';
+import Sidebar from '@/components/Sidebar';
+import TaskList from '@/components/TaskList';
+import AddTaskModal from '@/components/AddTaskModal';
+import { initialTasks, projects, users } from '@/lib/data';
 
 export default function Home() {
+  const [tasks, setTasks] = useState(initialTasks);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const filteredTasks = selectedProjectId
+    ? tasks.filter(t => t.projectId === selectedProjectId)
+    : tasks;
+
+  const handleToggleTask = (taskId) => {
+    setTasks(tasks.map(t =>
+      t.id === taskId ? { ...t, completed: !t.completed } : t
+    ));
+  };
+
+  const handleAddTask = (newTask) => {
+    setTasks([...tasks, { ...newTask, id: Date.now().toString() }]);
+  };
+
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const pageTitle = selectedProject ? selectedProject.name : "All Tasks";
+
   return (
-    <div className={styles.page}>
+    <div className={styles.container}>
+      <Sidebar
+        projects={projects}
+        selectedProjectId={selectedProjectId}
+        onSelectProject={setSelectedProjectId}
+      />
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+        <header className={styles.header}>
+          <div>
+            <h1 className={styles.title}>{pageTitle}</h1>
+            <p className={styles.subtitle}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <button
+            className={styles.addTaskBtn}
+            onClick={() => setIsModalOpen(true)}
+          >
+            + Add Task
+          </button>
+        </header>
+
+        <TaskList
+          tasks={filteredTasks}
+          users={users}
+          onToggleTask={handleToggleTask}
         />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <AddTaskModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onAdd={handleAddTask}
+          projects={projects}
+          users={users}
+        />
       </main>
     </div>
   );
